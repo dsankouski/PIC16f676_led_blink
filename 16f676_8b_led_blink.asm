@@ -9,34 +9,33 @@
 		counta 			;used in delay routine 
 		countb 			;used in delay routine
 		number
-		oneA
-		oneC
-		twoA
-		twoC
 	endc
-
-	;org	0x004
-	;	goto	Interrupt
 	
 	org	0x0050			;org sets the origin, 0x0000 for the 16F628,
 					;this is where the program starts running	
 
 	bcf 	STATUS,RP0 	;Bank 0
 	clrf 	PORTA 		;Init PORTA
-	MOVLW	0x3f
+	movlw	0x21
 	movwf	CMCON
 	clrf	PORTC
 	movlw	0x3f 		;Set RA<5:0> to 
 	movwf	CMCON 		;digital I/O
 	bsf 	STATUS,RP0 	;Bank 1
-	clrf	ANSEL 		;digital I/O
-	movlw 	0x00 		; 
-	movwf 	TRISA 		;as outputs
+	movlw	0x02
+	movwf	ANSEL
+	movwf 	TRISA
+	movlw   0x03
+	movwf   ADCON1      ; using internal ADC oscillator
+	movlw   0x00
 	movwf 	TRISC 		;as outputs
 	
 	bcf		STATUS,	RP0	;select bank 0
 	
-	;Initialize number constants
+	movlw   0x05
+	movwf   ADCON0
+	
+	;Initialize segment display number representation constants
 	movlw	0x3f	;0
 	movwf	0x30
 	movlw	0x00
@@ -45,7 +44,7 @@
 	movwf	0x31	
 	movlw	0x00
 	movwf	0x41	
-	movlw	0x1B	;2
+	movlw	0x1b	;2
 	movwf	0x32
 	movlw	0x01
 	movwf	0x42	
@@ -56,15 +55,54 @@
 	movlw	0x29	;4
 	movwf	0x34
 	movlw	0x01
-	movwf	0x44	
+	movwf	0x44
+	movlw   0x66    ;5
+    movwf   0x35
+    movlw	0x01
+	movwf	0x45
+	movlw   0x67    ;6
+    movwf   0x36
+    movlw	0x01
+	movwf	0x46
+	movlw   0x1c    ;7
+    movwf   0x37
+    movlw	0x00
+	movwf	0x47
 	movlw	0x3f	;8
 	movwf	0x38
 	movlw	0x01
 	movwf	0x48	
+	movlw	0x3e	;9
+	movwf	0x39
+	movlw	0x01
+	movwf	0x49	
+    movlw	0x3d	;A
+	movwf	0x3a
+	movlw	0x01
+	movwf	0x4a	
+	movlw	0x17	;B
+	movwf	0x3b
+	movlw	0x01
+	movwf	0x4b	
+	movlw	0x33	;C
+	movwf	0x3c
+	movlw	0x00
+	movwf	0x4c	
+	movlw	0x0f	;D
+	movwf	0x3d
+	movlw	0x01
+	movwf	0x4d	
+	movlw	0x33	;E
+	movwf	0x3e
+	movlw	0x01
+	movwf	0x4e	
+    movlw	0x31	;F
+	movwf	0x3f
+	movlw	0x01
+	movwf	0x4f		
 	
 	movlw	0x00
 	movwf	number
-	;bcf	STATUS,T0CS	;setting timer operation mode as timer
 
 Loop	
 	nop				;the nop's make up the time taken by the goto
@@ -72,14 +110,17 @@ Loop
 	movlw	0x00
 	movwf	PORTC
 	movwf	PORTA
+	incf    ADCON0     ;start conversion
 	call	Delay
+	
+	movfw   ADRESH
 	
 	call	RenderNumber
 
 	call	Delay
 	
 	movfw	number
-	sublw	d'4'
+	sublw	0x0f
 	btfsc	STATUS,Z
 	movwf	number
 	
